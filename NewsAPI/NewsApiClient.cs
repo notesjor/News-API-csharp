@@ -190,9 +190,12 @@ namespace NewsAPI
 
             // make the http request
             var httpRequest = new HttpRequestMessage(HttpMethod.Get, BASE_URL + endpoint + "?" + querystring);
-            var httpResponse = await HttpClient.SendAsync(httpRequest);            
+            var httpResponse = await HttpClient.SendAsync(httpRequest);
 
-            var json = await httpResponse.Content?.ReadAsStringAsync();
+            var task = httpResponse?.Content?.ReadAsStringAsync();
+            task?.Wait();
+
+            var json = task?.Result;
             if (!string.IsNullOrWhiteSpace(json))
             {
                 // convert the json to an obj
@@ -228,7 +231,10 @@ namespace NewsAPI
                 articlesResult.Error = new Error
                 {
                     Code = ErrorCodes.UnexpectedError,
-                    Message = "The API returned an empty response. Are you connected to the internet?"
+                    Message = 
+                      task == null ?
+                      "The API returned an empty response. Are you connected to the internet?" :
+                      $"{task.Exception?.Message}\n{task.Exception?.StackTrace}"
                 };
             }
 
